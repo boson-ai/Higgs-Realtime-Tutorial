@@ -1,0 +1,389 @@
+:root {
+  --bg: #14161a;
+  --panel: #1c1f26;
+  --border: #2c313b;
+  --text: #e6e8ec;
+  --muted: #939aa8;
+  --accent: #6ea8fe;
+  --error: #ff8080;
+  --ok: #7ddba1;
+  --warn: #f0c674;
+
+  color-scheme: dark;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+.app {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 6rem;
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin: 0 0 0.5rem;
+}
+
+.lede {
+  color: var(--muted);
+  margin: 0 0 1.5rem;
+  line-height: 1.6;
+}
+
+button,
+input {
+  font: inherit;
+  padding: 0.55rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+button:disabled,
+input:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+input {
+  flex: 1;
+  min-width: 0;
+}
+
+code {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.row {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+
+/* --- status bar --- */
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 1.2rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--muted);
+  flex: none;
+}
+
+.dot-open {
+  background: var(--ok);
+}
+.dot-connecting {
+  background: var(--warn);
+}
+.dot-closed,
+.dot-closing {
+  background: var(--error);
+}
+
+.status-text {
+  font-variant: small-caps;
+  letter-spacing: 0.03em;
+}
+
+.status-close {
+  color: var(--warn);
+  border-left: 1px solid var(--border);
+  padding-left: 0.6rem;
+}
+
+/* --- microphone --- */
+
+.mic {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.mic-on {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.meter {
+  flex: 1;
+  min-width: 8rem;
+  height: 0.55rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  overflow: hidden;
+}
+
+.meter-fill {
+  height: 100%;
+  background: var(--ok);
+  transition: width 80ms linear;
+}
+
+.meter-warn {
+  color: var(--warn);
+  font-size: 0.82rem;
+  flex-basis: 100%;
+}
+
+.typed {
+  margin-bottom: 1rem;
+}
+
+.typed summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin-bottom: 0.7rem;
+}
+
+/* --- transcript --- */
+
+.empty {
+  color: var(--muted);
+  padding: 1.5rem 0;
+}
+
+.transcript-panel {
+  margin-top: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.transcript-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.4rem;
+}
+
+.link {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--accent);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.turn {
+  padding: 0.7rem 1rem;
+  border-radius: 0.5rem;
+  line-height: 1.6;
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+
+.turn .who {
+  display: block;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--muted);
+  margin-bottom: 0.3rem;
+}
+
+.turn.user {
+  border-left: 3px solid var(--muted);
+}
+
+.turn.assistant {
+  border-left: 3px solid var(--accent);
+}
+
+.turn.assistant.interrupted {
+  border-left-color: var(--warn);
+}
+
+.turn.tool {
+  border-left: 3px solid var(--muted);
+  font-size: 0.85rem;
+}
+
+.turn.tool.error {
+  border-left-color: var(--error);
+}
+
+.turn.tool .ms {
+  color: var(--muted);
+  font-weight: normal;
+}
+
+.args {
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.tool-result {
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--border);
+  color: var(--text);
+}
+
+.turn.system {
+  background: none;
+  border: none;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.82rem;
+  padding: 0.2rem;
+}
+
+.pending {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 0.25rem;
+  background: var(--warn);
+  color: #14161a;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  vertical-align: middle;
+}
+
+.caret {
+  display: inline-block;
+  width: 0.5rem;
+  height: 1em;
+  margin-left: 0.15rem;
+  background: var(--accent);
+  vertical-align: text-bottom;
+  animation: blink 1s steps(2, start) infinite;
+}
+
+@keyframes blink {
+  to {
+    visibility: hidden;
+  }
+}
+
+/* --- debug drawer --- */
+
+.drawer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer-toggle {
+  border: none;
+  border-radius: 0;
+  background: var(--panel);
+  text-align: left;
+  font-size: 0.85rem;
+  color: var(--muted);
+  padding: 0.5rem 1rem;
+}
+
+.drawer-list {
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.82rem;
+}
+
+.entry {
+  border-bottom: 1px solid var(--border);
+}
+
+.entry-head {
+  width: 100%;
+  border: none;
+  border-radius: 0;
+  background: none;
+  display: flex;
+  gap: 0.7rem;
+  align-items: baseline;
+  padding: 0.3rem 1rem;
+  text-align: left;
+}
+
+.entry-head:hover {
+  background: var(--panel);
+}
+
+.arrow {
+  width: 1ch;
+  flex: none;
+  color: var(--muted);
+}
+
+.dir-send .arrow {
+  color: var(--accent);
+}
+.dir-recv .arrow {
+  color: var(--ok);
+}
+
+.entry-head .time {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.entry-body {
+  margin: 0;
+  padding: 0.6rem 1rem 0.9rem 2.7rem;
+  background: var(--panel);
+  overflow-x: auto;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}

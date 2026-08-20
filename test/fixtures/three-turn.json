@@ -1,0 +1,706 @@
+[
+  {
+    "event_id": "ff1aa8be-8879-4eb9-a041-c9d33660b344",
+    "type": "session.created",
+    "session": {
+      "id": "6445eade",
+      "type": "realtime",
+      "object": "realtime.session",
+      "audio": {
+        "input": {
+          "format": {
+            "rate": 24000,
+            "type": "audio/pcm"
+          },
+          "noise_reduction": null,
+          "transcription": {
+            "language": "en",
+            "model": "higgs-stt-3.1",
+            "prompt": "",
+            "temperature": null
+          },
+          "turn_detection": {
+            "type": "server_vad",
+            "create_response": true,
+            "idle_timeout_ms": null,
+            "interrupt_response": true,
+            "min_speech_duration": 0.125,
+            "prefix_padding_ms": 300,
+            "silence_duration_ms": 500,
+            "threshold": 0.55
+          }
+        },
+        "output": {
+          "format": {
+            "rate": 24000,
+            "type": "audio/pcm"
+          },
+          "speed": 1,
+          "voice": "default",
+          "model": null,
+          "temperature": null,
+          "long_running_fallback_filler": null
+        }
+      },
+      "include": [],
+      "instructions": "You are a friendly voice assistant being used to test a browser audio pipeline. Keep every reply to one or two short sentences. You are speaking aloud, not writing — no lists, no markdown, no emoji.",
+      "max_output_tokens": "inf",
+      "model": "higgs-realtime",
+      "output_modalities": [
+        "audio"
+      ],
+      "prompt": null,
+      "tools": [],
+      "tool_choice": "auto",
+      "tracing": null,
+      "truncation": "auto",
+      "temperature": 0.7
+    }
+  },
+  {
+    "event_id": "a0e1228e-8575-4e47-812c-3a790d6f03be",
+    "type": "input_audio_buffer.speech_started",
+    "item_id": "c2002368",
+    "audio_start_ms": 84
+  },
+  {
+    "event_id": "fd067454-481c-4069-ac11-f19ce0b80612",
+    "type": "input_audio_buffer.speech_stopped",
+    "item_id": "c2002368",
+    "audio_end_ms": 2804
+  },
+  {
+    "event_id": "3df8d6c1-ae7f-4d36-9300-23f4e94c2681",
+    "type": "input_audio_buffer.committed",
+    "previous_item_id": null,
+    "item_id": "c2002368"
+  },
+  {
+    "event_id": "a58041f8-03e5-4052-93c1-eae0eea3094d",
+    "type": "conversation.item.added",
+    "item": {
+      "id": "c2002368",
+      "object": "realtime.item",
+      "type": "message",
+      "role": "user",
+      "status": "completed",
+      "content": [
+        {
+          "type": "input_audio",
+          "audio": "",
+          "end_timestamps_ms": null
+        }
+      ]
+    },
+    "previous_item_id": null
+  },
+  {
+    "event_id": "6017dd81-2b6c-4dc6-a674-7b07aa8e702a",
+    "type": "response.created",
+    "response": {
+      "id": "6445_resp_2",
+      "object": "realtime.response",
+      "status": "in_progress",
+      "status_details": null,
+      "output": [],
+      "usage": null,
+      "metadata": null
+    }
+  },
+  {
+    "event_id": "cd53d3fd-dcf2-4efd-822c-f4c663daa1ba",
+    "type": "conversation.item.input_audio_transcription.completed",
+    "item_id": "c2002368",
+    "content_index": 0,
+    "transcript": "Hi. My name is Sam."
+  },
+  {
+    "event_id": "0218ac2f-4c08-4434-a9c9-438ba92a5e82",
+    "type": "conversation.item.input_audio_transcription.completed",
+    "item_id": "c2002368",
+    "content_index": 0,
+    "transcript": "Hi. My name is Sam."
+  },
+  {
+    "event_id": "89e2eedd-a58f-42f2-9128-bc6fdabe4b93",
+    "type": "response.output_item.added",
+    "response_id": "6445_resp_2",
+    "output_index": 0,
+    "item": {
+      "id": "679a31a3",
+      "object": "realtime.item",
+      "type": "message",
+      "role": "assistant",
+      "status": "in_progress",
+      "content": []
+    }
+  },
+  {
+    "event_id": "e7ab96ed-0d78-41bf-a4e9-9279eff13c43",
+    "type": "conversation.item.added",
+    "item": {
+      "id": "679a31a3",
+      "object": "realtime.item",
+      "type": "message",
+      "role": "assistant",
+      "status": "in_progress",
+      "content": []
+    },
+    "previous_item_id": "c2002368"
+  },
+  {
+    "event_id": "c5c56726-9058-46bd-ac27-4ccf7595b7c0",
+    "type": "response.content_part.added",
+    "item_id": "679a31a3",
+    "response_id": "6445_resp_2",
+    "output_index": 0,
+    "content_index": 0,
+    "part": {
+      "type": "audio",
+      "audio": null,
+      "transcript": ""
+    }
+  },
+  {
+    "event_id": "f39aa2ae-b83f-4f18-a059-0b9b2064a58b",
+    "type": "response.output_audio_transcript.delta",
+    "response_id": "6445_resp_2",
+    "item_id": "679a31a3",
+    "output_index": 0,
+    "content_index": 0,
+    "delta": "Hi Sam, nice to meet you."
+  },
+  {
+    "event_id": "16de87cb-0d9d-498c-a6dc-45347b8c0f0d",
+    "type": "response.output_audio.delta",
+    "response_id": "6445_resp_2",
+    "item_id": "679a31a3",
+    "output_index": 0,
+    "content_index": 0,
+    "delta": "AgAAAPv//P////7///8AAAMAAgABAAEA…(truncated for the fixture)"
+  },
+  {
+    "event_id": "c76fba34-268c-436a-902d-42c6a6ac9736",
+    "type": "response.output_audio_transcript.length",
+    "response_id": "6445_resp_2",
+    "item_id": "679a31a3",
+    "output_index": 0,
+    "content_index": 0,
+    "delta": "Hi Sam, nice to meet you.",
+    "length_ms": 2200
+  },
+  {
+    "event_id": "07aa22d9-9054-4f9a-9414-085af61505b2",
+    "type": "response.output_audio_transcript.delta",
+    "response_id": "6445_resp_2",
+    "item_id": "679a31a3",
+    "output_index": 0,
+    "content_index": 0,
+    "delta": " How can I help you today?"
+  },
+  {
+    "event_id": "55720203-c03f-4d4a-bbb2-6ed6fd70a502",
+    "type": "response.output_audio_transcript.length",
+    "response_id": "6445_resp_2",
+    "item_id": "679a31a3",
+    "output_index": 0,
+    "content_index": 0,
+    "delta": " How can I help you today?",
+    "length_ms": 3800
+  },
+  {
+    "event_id": "432d1ee4-9f88-48c6-9975-43a80eb156ee",
+    "type": "response.output_audio_transcript.done",
+    "response_id": "6445_resp_2",
+    "item_id": "679a31a3",
+    "output_index": 0,
+    "content_index": 0,
+    "transcript": "Hi Sam, nice to meet you. How can I help you today?"
+  },
+  {
+    "event_id": "1f4956f1-da78-430f-837d-65579c7d8e66",
+    "type": "response.output_audio.done",
+    "response_id": "6445_resp_2",
+    "item_id": "679a31a3",
+    "output_index": 0,
+    "content_index": 0
+  },
+  {
+    "event_id": "121af079-cf54-4ca6-b04f-ece0cc840c2c",
+    "type": "response.content_part.done",
+    "response_id": "6445_resp_2",
+    "item_id": "679a31a3",
+    "output_index": 0,
+    "content_index": 0,
+    "part": {
+      "type": "audio",
+      "audio": null,
+      "transcript": "Hi Sam, nice to meet you. How can I help you today?"
+    }
+  },
+  {
+    "event_id": "56fdcafc-2002-40d4-b80e-75d2e32aec84",
+    "type": "response.output_item.done",
+    "response_id": "6445_resp_2",
+    "output_index": 0,
+    "item": {
+      "id": "679a31a3",
+      "object": "realtime.item",
+      "type": "message",
+      "role": "assistant",
+      "status": "completed",
+      "content": [
+        {
+          "type": "audio",
+          "transcript": "Hi Sam, nice to meet you. How can I help you today?"
+        }
+      ]
+    }
+  },
+  {
+    "event_id": "1ab0f387-2ff8-447e-9dfa-c7ea009ba486",
+    "type": "response.done",
+    "response": {
+      "id": "6445_resp_2",
+      "object": "realtime.response",
+      "status": "completed",
+      "status_details": null,
+      "output": [
+        {
+          "id": "679a31a3",
+          "object": "realtime.item",
+          "type": "message",
+          "role": "assistant",
+          "status": "completed",
+          "content": [
+            {
+              "type": "audio",
+              "transcript": "Hi Sam, nice to meet you. How can I help you today?"
+            }
+          ]
+        }
+      ],
+      "usage": {
+        "total_tokens": 100,
+        "input_tokens": 84,
+        "output_tokens": 16,
+        "input_token_details": {
+          "cached_tokens": 0
+        }
+      },
+      "metadata": null
+    }
+  },
+  {
+    "event_id": "4e209ed8-1c15-420f-b204-bc1220b03c17",
+    "type": "input_audio_buffer.speech_started",
+    "item_id": "4d887564",
+    "audio_start_ms": 3860
+  },
+  {
+    "event_id": "a5f3d485-adba-4223-84d3-1474265d09c4",
+    "type": "input_audio_buffer.speech_stopped",
+    "item_id": "4d887564",
+    "audio_end_ms": 7540
+  },
+  {
+    "event_id": "87fefb8f-1124-41d0-8bbf-552b961bcb58",
+    "type": "input_audio_buffer.committed",
+    "previous_item_id": "679a31a3",
+    "item_id": "4d887564"
+  },
+  {
+    "event_id": "5a85af36-d8f8-4815-b64f-c2ff6b3dca62",
+    "type": "conversation.item.added",
+    "item": {
+      "id": "4d887564",
+      "object": "realtime.item",
+      "type": "message",
+      "role": "user",
+      "status": "completed",
+      "content": [
+        {
+          "type": "input_audio",
+          "audio": "",
+          "end_timestamps_ms": null
+        }
+      ]
+    },
+    "previous_item_id": "679a31a3"
+  },
+  {
+    "event_id": "38cafa73-fec0-49de-9a10-0c0bb6e097e7",
+    "type": "response.created",
+    "response": {
+      "id": "6445_resp_4",
+      "object": "realtime.response",
+      "status": "in_progress",
+      "status_details": null,
+      "output": [],
+      "usage": null,
+      "metadata": null
+    }
+  },
+  {
+    "event_id": "3b23bfe0-1d3d-400a-b4e0-aac135c7797a",
+    "type": "conversation.item.input_audio_transcription.completed",
+    "item_id": "4d887564",
+    "content_index": 0,
+    "transcript": "Recite the alphabet slowly, one letter at a time."
+  },
+  {
+    "event_id": "47fa2af7-6ab4-44a9-a8d5-ffc0f96f09e4",
+    "type": "conversation.item.input_audio_transcription.completed",
+    "item_id": "4d887564",
+    "content_index": 0,
+    "transcript": "Recite the alphabet slowly, one letter at a time."
+  },
+  {
+    "event_id": "58652768-08db-4e1d-bc10-32fc62eb7a12",
+    "type": "response.output_item.added",
+    "response_id": "6445_resp_4",
+    "output_index": 0,
+    "item": {
+      "id": "5917a27d",
+      "object": "realtime.item",
+      "type": "message",
+      "role": "assistant",
+      "status": "in_progress",
+      "content": []
+    }
+  },
+  {
+    "event_id": "3d92296d-1d72-4b5c-ace3-93484fcfec10",
+    "type": "conversation.item.added",
+    "item": {
+      "id": "5917a27d",
+      "object": "realtime.item",
+      "type": "message",
+      "role": "assistant",
+      "status": "in_progress",
+      "content": []
+    },
+    "previous_item_id": "4d887564"
+  },
+  {
+    "event_id": "ef21cbd0-c2d1-4212-9348-65a5b3f9153a",
+    "type": "response.content_part.added",
+    "item_id": "5917a27d",
+    "response_id": "6445_resp_4",
+    "output_index": 0,
+    "content_index": 0,
+    "part": {
+      "type": "audio",
+      "audio": null,
+      "transcript": ""
+    }
+  },
+  {
+    "event_id": "68feb9b6-668f-4a19-9820-ace7178a3c62",
+    "type": "response.output_audio_transcript.delta",
+    "response_id": "6445_resp_4",
+    "item_id": "5917a27d",
+    "output_index": 0,
+    "content_index": 0,
+    "delta": "A B C D E F G H I J K L M N O P Q R S T U V W X Y Z"
+  },
+  {
+    "event_id": "61e9cef3-0a54-43a6-8187-42df1fabaced",
+    "type": "response.output_audio_transcript.length",
+    "response_id": "6445_resp_4",
+    "item_id": "5917a27d",
+    "output_index": 0,
+    "content_index": 0,
+    "delta": "A B C D E F G H I J K L M N O P Q R S T U V W X Y Z",
+    "length_ms": 11600
+  },
+  {
+    "event_id": "906eb9cc-a0f5-449b-afe0-650106008c18",
+    "type": "response.output_audio_transcript.done",
+    "response_id": "6445_resp_4",
+    "item_id": "5917a27d",
+    "output_index": 0,
+    "content_index": 0,
+    "transcript": "A B C D E F G H I J K L M N O P Q R S T U V W X Y Z"
+  },
+  {
+    "event_id": "6c6b8641-62d2-436b-b9dc-c02f50413409",
+    "type": "response.output_audio.done",
+    "response_id": "6445_resp_4",
+    "item_id": "5917a27d",
+    "output_index": 0,
+    "content_index": 0
+  },
+  {
+    "event_id": "4534ecd6-dbe7-4996-8d68-085297af089a",
+    "type": "response.content_part.done",
+    "response_id": "6445_resp_4",
+    "item_id": "5917a27d",
+    "output_index": 0,
+    "content_index": 0,
+    "part": {
+      "type": "audio",
+      "audio": null,
+      "transcript": "A B C D E F G H I J K L M N O P Q R S T U V W X Y Z"
+    }
+  },
+  {
+    "event_id": "050540fe-f8de-4ab0-803e-37fde7bfc524",
+    "type": "response.output_item.done",
+    "response_id": "6445_resp_4",
+    "output_index": 0,
+    "item": {
+      "id": "5917a27d",
+      "object": "realtime.item",
+      "type": "message",
+      "role": "assistant",
+      "status": "completed",
+      "content": [
+        {
+          "type": "audio",
+          "transcript": "A B C D E F G H I J K L M N O P Q R S T U V W X Y Z"
+        }
+      ]
+    }
+  },
+  {
+    "event_id": "28632675-3ae0-4e63-9d00-9e08ea0e6d26",
+    "type": "response.done",
+    "response": {
+      "id": "6445_resp_4",
+      "object": "realtime.response",
+      "status": "completed",
+      "status_details": null,
+      "output": [
+        {
+          "id": "5917a27d",
+          "object": "realtime.item",
+          "type": "message",
+          "role": "assistant",
+          "status": "completed",
+          "content": [
+            {
+              "type": "audio",
+              "transcript": "A B C D E F G H I J K L M N O P Q R S T U V W X Y Z"
+            }
+          ]
+        }
+      ],
+      "usage": {
+        "total_tokens": 161,
+        "input_tokens": 134,
+        "output_tokens": 27,
+        "input_token_details": {
+          "cached_tokens": 48
+        }
+      },
+      "metadata": null
+    }
+  },
+  {
+    "event_id": "8ce30fda-73ea-40a3-8ee5-c8e9699fe74c",
+    "type": "input_audio_buffer.speech_started",
+    "item_id": "d89f5e83",
+    "audio_start_ms": 8052
+  },
+  {
+    "event_id": "826704f1-9f49-43fd-b396-c1fd3d53200e",
+    "type": "input_audio_buffer.speech_stopped",
+    "item_id": "d89f5e83",
+    "audio_end_ms": 9908
+  },
+  {
+    "event_id": "8b055ffb-5973-4a15-8b6a-3f9e2ddbcd23",
+    "type": "input_audio_buffer.committed",
+    "previous_item_id": "5917a27d",
+    "item_id": "d89f5e83"
+  },
+  {
+    "event_id": "e1810829-dce4-4abd-be8a-478f8561d5ce",
+    "type": "conversation.item.added",
+    "item": {
+      "id": "d89f5e83",
+      "object": "realtime.item",
+      "type": "message",
+      "role": "user",
+      "status": "completed",
+      "content": [
+        {
+          "type": "input_audio",
+          "audio": "",
+          "end_timestamps_ms": null
+        }
+      ]
+    },
+    "previous_item_id": "5917a27d"
+  },
+  {
+    "event_id": "d9b788ff-db20-4c69-9553-ace1f49d0b73",
+    "type": "response.created",
+    "response": {
+      "id": "6445_resp_6",
+      "object": "realtime.response",
+      "status": "in_progress",
+      "status_details": null,
+      "output": [],
+      "usage": null,
+      "metadata": null
+    }
+  },
+  {
+    "event_id": "0c0986f7-4c21-42eb-8364-8dc6ef2dabb4",
+    "type": "conversation.item.input_audio_transcription.completed",
+    "item_id": "d89f5e83",
+    "content_index": 0,
+    "transcript": "What is my name?"
+  },
+  {
+    "event_id": "58b90175-d375-483c-8a88-851d85f97f09",
+    "type": "conversation.item.input_audio_transcription.completed",
+    "item_id": "d89f5e83",
+    "content_index": 0,
+    "transcript": "What is my name?"
+  },
+  {
+    "event_id": "d6060f4e-ad99-4751-848f-3bb4ebc1c312",
+    "type": "response.output_item.added",
+    "response_id": "6445_resp_6",
+    "output_index": 0,
+    "item": {
+      "id": "19af3623",
+      "object": "realtime.item",
+      "type": "message",
+      "role": "assistant",
+      "status": "in_progress",
+      "content": []
+    }
+  },
+  {
+    "event_id": "447c5511-2a29-4239-8854-142b83572ed0",
+    "type": "conversation.item.added",
+    "item": {
+      "id": "19af3623",
+      "object": "realtime.item",
+      "type": "message",
+      "role": "assistant",
+      "status": "in_progress",
+      "content": []
+    },
+    "previous_item_id": "d89f5e83"
+  },
+  {
+    "event_id": "6bc4f7c6-8254-484d-bbc0-ad46d067c27b",
+    "type": "response.content_part.added",
+    "item_id": "19af3623",
+    "response_id": "6445_resp_6",
+    "output_index": 0,
+    "content_index": 0,
+    "part": {
+      "type": "audio",
+      "audio": null,
+      "transcript": ""
+    }
+  },
+  {
+    "event_id": "2a2a7838-cccd-46eb-ac93-76650a986819",
+    "type": "response.output_audio_transcript.delta",
+    "response_id": "6445_resp_6",
+    "item_id": "19af3623",
+    "output_index": 0,
+    "content_index": 0,
+    "delta": "Your name is Sam."
+  },
+  {
+    "event_id": "4cc7926d-4f3f-441b-a6a1-f08f063afec6",
+    "type": "response.output_audio_transcript.length",
+    "response_id": "6445_resp_6",
+    "item_id": "19af3623",
+    "output_index": 0,
+    "content_index": 0,
+    "delta": "Your name is Sam.",
+    "length_ms": 1560
+  },
+  {
+    "event_id": "d3352a33-bb98-4f5c-9265-5f09dcc123b9",
+    "type": "response.output_audio_transcript.done",
+    "response_id": "6445_resp_6",
+    "item_id": "19af3623",
+    "output_index": 0,
+    "content_index": 0,
+    "transcript": "Your name is Sam."
+  },
+  {
+    "event_id": "77b90458-fe96-4393-b58d-e1c6fdd97807",
+    "type": "response.output_audio.done",
+    "response_id": "6445_resp_6",
+    "item_id": "19af3623",
+    "output_index": 0,
+    "content_index": 0
+  },
+  {
+    "event_id": "f644cb5a-d922-4096-a799-c32511313920",
+    "type": "response.content_part.done",
+    "response_id": "6445_resp_6",
+    "item_id": "19af3623",
+    "output_index": 0,
+    "content_index": 0,
+    "part": {
+      "type": "audio",
+      "audio": null,
+      "transcript": "Your name is Sam."
+    }
+  },
+  {
+    "event_id": "dfbd60b0-2e2b-4b55-8c14-b2074ef0fdca",
+    "type": "response.output_item.done",
+    "response_id": "6445_resp_6",
+    "output_index": 0,
+    "item": {
+      "id": "19af3623",
+      "object": "realtime.item",
+      "type": "message",
+      "role": "assistant",
+      "status": "completed",
+      "content": [
+        {
+          "type": "audio",
+          "transcript": "Your name is Sam."
+        }
+      ]
+    }
+  },
+  {
+    "event_id": "9e8059fb-e307-44a2-9f19-07e5956d8646",
+    "type": "response.done",
+    "response": {
+      "id": "6445_resp_6",
+      "object": "realtime.response",
+      "status": "completed",
+      "status_details": null,
+      "output": [
+        {
+          "id": "19af3623",
+          "object": "realtime.item",
+          "type": "message",
+          "role": "assistant",
+          "status": "completed",
+          "content": [
+            {
+              "type": "audio",
+              "transcript": "Your name is Sam."
+            }
+          ]
+        }
+      ],
+      "usage": {
+        "total_tokens": 165,
+        "input_tokens": 159,
+        "output_tokens": 6,
+        "input_token_details": {
+          "cached_tokens": 80
+        }
+      },
+      "metadata": null
+    }
+  }
+]

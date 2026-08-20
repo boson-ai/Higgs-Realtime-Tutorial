@@ -1,0 +1,55 @@
+{
+  "_comment": "The entire 'web' this tutorial's search tool can see. Ten short pages about the fictional town of Willow Creek. Deliberately fictional: none of these facts exist anywhere else, so if the model speaks one of them, it read this file — it cannot have known it. Edit a fact, reload, ask again; the answer must change. One file, so you can read or edit the whole thing without touching code.",
+  "pages": [
+    {
+      "title": "Willow Creek ferry moves to its winter schedule",
+      "topic": "news",
+      "snippet": "From Monday the ferry leaves on the quarter hour, with the last crossing at 9:45 pm."
+    },
+    {
+      "title": "Night market returns to Harbor Street",
+      "topic": "news",
+      "snippet": "The Friday night market is back this week, running 5 pm to 10 pm through the end of the month."
+    },
+    {
+      "title": "Sourdough prize goes to Harbor Street bakery",
+      "topic": "news",
+      "snippet": "Miller & Finch took the national sourdough prize with a rye loaf fermented for 60 hours."
+    },
+    {
+      "title": "Willow Creek weekend forecast",
+      "topic": "weather",
+      "snippet": "Saturday brings light rain and a high of 16 degrees; Sunday clears, with a high of 19."
+    },
+    {
+      "title": "Otters take the regional final",
+      "topic": "sports",
+      "snippet": "The Willow Creek Otters beat Eastport 3 to 2 on a stoppage-time goal by Ada Okafor."
+    },
+    {
+      "title": "Marathon route changes announced",
+      "topic": "sports",
+      "snippet": "This year's Willow Creek marathon skips the causeway; the course now climbs Beacon Hill twice."
+    },
+    {
+      "title": "Comet Verlaine visible this month",
+      "topic": "science",
+      "snippet": "Comet Verlaine sits low in the northeast just before dawn for the rest of the month; no telescope needed."
+    },
+    {
+      "title": "University counts its puffins",
+      "topic": "science",
+      "snippet": "The annual puffin census recorded 8,140 birds on the north cliffs, up six percent from last year."
+    },
+    {
+      "title": "Lighthouse museum extends its hours",
+      "topic": "travel",
+      "snippet": "The Museum of Lighthouse Optics now stays open until 7 pm on weekends, and admission is still free."
+    },
+    {
+      "title": "Beacon Hill funicular reopens",
+      "topic": "travel",
+      "snippet": "After a two-year restoration the funicular runs daily, every 20 minutes, weather permitting."
+    }
+  ]
+}
