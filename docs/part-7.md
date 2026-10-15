@@ -1,161 +1,201 @@
-# Part 7 — The same agent on LiveKit
+# Part 7 — A two-stage voice agent with LiveKit Agents
 
-**By the end of this part** the agent from Part 6 will be talking to you through a
-[LiveKit](https://livekit.io/) room, and `bot.py` will not have changed.
+**By the end of this part** you will have the agent from Part 6 — the same two-stage
+Higgs pipeline, the same Willow — built with [LiveKit Agents](https://docs.livekit.io/agents/)
+instead of Pipecat, and you will be talking to it in the LiveKit Agents Playground.
 
-Checked against `api.boson.ai`, `livekit-server` 1.13.10 and Pipecat 1.12.0 on 2026-10-15.
+This part does not depend on Part 6. Read [What "two-stage" means](part-6.md#what-two-stage-means)
+there if you skipped it; everything else is here.
 
----
-
-## Why a second transport
-
-In Part 6 the browser connected straight to `bot.py`. Pipecat calls that transport
-*SmallWebRTC*: one caller, one peer-to-peer connection, nothing else to run. It is ideal
-for development and it is what the playground uses by default.
-
-LiveKit puts a media server in the middle:
-
-```
-browser ──► LiveKit server (a "room") ◄── bot.py ──► wss://api.boson.ai/v1/realtime/
-```
-
-The caller and the bot both *join a room*. That one extra hop buys several things you will
-want sooner or later:
-
-- **Real networks.** LiveKit runs its own TURN and handles reconnection. SmallWebRTC can
-  use a TURN server too (`bot.py --ice-servers …`), but you run and configure it
-  yourself. With this tutorial's defaults, both ends must reach each other directly.
-- **Clients.** LiveKit has SDKs for iOS, Android, Flutter, Unity and the web, all of which
-  can join the same room as your bot.
-- **Phone calls.** LiveKit SIP brings a phone number into a room as just another
-  participant.
-- **Scale.** Rooms can be spread across many LiveKit nodes, independently of your bots.
-
-The agent does not care about any of this. A transport only moves audio frames in and out
-of the pipeline.
+Checked against `api.boson.ai`, `livekit-server` 1.13.10 and LiveKit Agents 1.8.2 on
+2026-10-15.
 
 ---
 
-## Run a LiveKit server
+## How LiveKit is different
 
-For development, LiveKit's server runs as a single binary in dev mode. Install it:
+Pipecat's playground connects your browser straight to `bot.py`. LiveKit puts a media
+server in the middle, and both sides *join a room* on it:
+
+```
+browser (Agents Playground) ──► LiveKit server ◄── agent.py (worker) ──WebSocket──► wss://api.boson.ai/v1/realtime/
+                                 (a "room")
+```
+
+Three processes, then:
+
+| Process | Role |
+| --- | --- |
+| `livekit-server` | Routes audio between everyone in a room. Handles NAT, TURN and reconnection. |
+| `agent.py` | A **worker**. It registers with the server and is sent into each new room as the agent. |
+| A client | Anything that can join a room: the Agents Playground here; LiveKit's web, iOS, Android, Flutter or Unity SDKs in your product; a phone call through LiveKit SIP. |
+
+The extra hop buys you LiveKit's clients and its networking, and costs you a server to
+run. If you already run LiveKit, this is the track for you. If you do not, Part 6 has
+fewer moving parts.
+
+The Boson integration is a LiveKit Agents plugin, `livekit-plugins-boson`. It is in review
+upstream as [livekit/agents#6340](https://github.com/livekit/agents/pull/6340), so
+`livekit/pyproject.toml` installs it, and the matching `livekit-agents`, from that PR's
+commit. When it is released, those three lines become ordinary version pins.
+
+---
+
+## The agent
+
+Everything is in [`livekit/agent.py`](../livekit/agent.py):
+
+```python
+class Willow(Agent):
+    def __init__(self) -> None:
+        super().__init__(instructions=INSTRUCTIONS)
+
+    async def on_enter(self) -> None:
+        self.session.generate_reply(instructions="Greet the caller in one short sentence.")
+
+
+@server.rtc_session()
+async def entrypoint(ctx: JobContext) -> None:
+    session = AgentSession(
+        llm=boson.realtime.RealtimeModel(
+            api_key=os.environ["BOSON_API_KEY"],
+            model="higgs-realtime",
+            voice="default",
+            input_audio_transcription_model="higgs-stt-3.1",
+        ),
+    )
+    await session.start(agent=Willow(), room=ctx.room)
+```
+
+Compare it with Part 6's `bot.py`. The parts map one to one:
+
+| | Pipecat (Part 6) | LiveKit Agents (Part 7) |
+| --- | --- | --- |
+| Both stages | `BosonRealtimeLLMService` | `boson.realtime.RealtimeModel` |
+| Wiring | a `Pipeline` you assemble | `AgentSession` assembles it |
+| Speaking first | `LLMRunFrame` on `client-ready` | `generate_reply()` in `on_enter` |
+| Turn detection | the server's, via `realtime_service_mode=True` | the server's, by default |
+| Who it talks to | one browser, peer to peer | a LiveKit room |
+
+There is no STT or TTS plugin in the session, and you should not add one. `RealtimeModel`
+is both stages, the same way `BosonRealtimeLLMService` is in Part 6.
+
+> **Stage 2 is the server default here.** The LiveKit plugin does not have an option for
+> the TTS model yet. When the session does not name one, the server uses its default,
+> `higgs-realtime-tts`: on 2026-10-15 a session with and without the explicit name gave
+> the same reply. Part 6's Pipecat service can name it (`output_audio_model`).
+
+`input_audio_transcription_model` only produces captions of what the caller said, which
+the playground shows in its chat. Stage 1 hears the audio itself and does not need it.
+
+---
+
+## Run it
+
+You need Python 3.11 or newer, [uv](https://docs.astral.sh/uv/getting-started/installation/),
+and Node.js with `pnpm` for the playground. Use three terminals.
+
+### 1. The LiveKit server
 
 ```bash
 brew install livekit                          # macOS
 curl -sSL https://get.livekit.io | bash       # Linux
-```
 
-Then start it:
-
-```bash
 livekit-server --dev --bind 127.0.0.1 --node-ip 127.0.0.1
 ```
 
-`--dev` gives it the fixed credentials `devkey` / `secret`. Put them in `pipecat/.env`:
-
-```bash
-LIVEKIT_URL=ws://127.0.0.1:7880
-LIVEKIT_API_KEY=devkey
-LIVEKIT_API_SECRET=secret
-```
+`--dev` gives it the fixed key `devkey` and secret `secret`.
 
 > **⚠ This will bite you: `--node-ip` on a machine with more than one network.**
 > In dev mode LiveKit advertises the machine's *primary* IP address for media, even with
-> `--bind 127.0.0.1`. If that address is not reachable from the bot, the bot's join hangs,
-> and after 20 seconds the LiveKit SDK panics
-> (`timed out waiting for ReadyForRoomEventRequest`) and takes `bot.py` down with it.
+> `--bind 127.0.0.1`. If that address is not reachable, joining a room hangs; we saw the
+> LiveKit SDK give up after 20 seconds and take the joining process down with it.
 > `--node-ip 127.0.0.1` keeps everything on loopback.
 
-[LiveKit Cloud](https://cloud.livekit.io/) works the same way: put its `wss://` URL, API
-key and secret in `.env` instead, and skip the local server.
-
----
-
-## Run the agent on LiveKit
+### 2. The agent
 
 ```bash
-uv run bot.py -t livekit
+cd livekit
+cp .env.example .env      # then set BOSON_API_KEY; the LiveKit values are --dev's
+uv run agent.py dev
 ```
 
-That is the whole change. Open `http://localhost:7860` again; the playground now joins
-through LiveKit.
+When it prints `registered worker`, it is waiting for rooms.
 
-Here is what happens when you press Connect:
+### 3. The Agents Playground
 
-1. The playground calls `POST /start` with `{"transport": "livekit"}`.
-2. The development runner creates a room, signs two tokens with your LiveKit key — one for
-   the bot and one for you — and starts the bot with its token.
-3. The playground receives `{url, token}` and joins the same room.
-4. Everything now travels through the LiveKit server. Audio is still WebRTC media tracks,
-   now published to the room. The RTVI messages become LiveKit data packets instead of
-   messages on a peer-to-peer data channel.
+The [Agents Playground](https://github.com/livekit/agents-playground) is LiveKit's
+open-source test client, the counterpart of Pipecat's playground. Run it against your
+local server:
 
-### What changed in `bot.py`
-
-Only the transport parameters, which Part 6 already declared for both:
-
-```python
-transport = await create_transport(
-    runner_args,
-    {
-        "webrtc": lambda: TransportParams(audio_in_enabled=True, audio_out_enabled=True),
-        "livekit": lambda: LiveKitParams(audio_in_enabled=True, audio_out_enabled=True),
-    },
-)
+```bash
+git clone https://github.com/livekit/agents-playground.git
+cd agents-playground
+cp .env.example .env.local
+# in .env.local:
+#   LIVEKIT_API_KEY=devkey
+#   LIVEKIT_API_SECRET=secret
+#   NEXT_PUBLIC_LIVEKIT_URL=ws://127.0.0.1:7880
+pnpm install
+pnpm dev
 ```
 
-> **⚠ This will bite you: each transport has its own params class.**
-> Passing the generic `TransportParams` to LiveKit looks fine until the bot joins, then
-> fails with `'TransportParams' object has no attribute 'audio_out_queue_size_ms'`. It is
-> logged as a connection error, and the room stays silent.
+Open `http://localhost:3000`, press **Connect** and allow the microphone. The playground
+creates a room, the server sends your worker into it, and Willow greets you.
+
+![The LiveKit Agents Playground after one question: Willow's greeting, the spoken question and the answer in the chat, and the room and agent details on the right](images/livekit-agents-playground.png)
+
+> **⚠ This will bite you: the hosted playground needs LiveKit Cloud.**
+> `agents-playground.livekit.io` now signs you in to LiveKit Cloud, so it cannot reach a
+> server on your laptop. Run the playground locally as above, or use a LiveKit Cloud
+> project for both the agent and the playground.
 
 ---
 
 ## Acceptance check
 
+`probe.py` joins a room the way the playground does, without a browser. It signs a token
+with your LiveKit key, waits for the greeting, and speaks a sentence synthesised with
+Boson's TTS:
+
 ```bash
-# terminal 1
-livekit-server --dev --bind 127.0.0.1 --node-ip 127.0.0.1
-
-# terminal 2
-uv run bot.py -t livekit
-
-# terminal 3
-uv run probe.py --transport livekit --say "What is the capital of Japan? One sentence please."
+uv run probe.py --say "What is the capital of France? One sentence."
 ```
 
 Expected output (run on 2026-10-15):
 
 ```
-  4.50s bot-ready
-  5.38s bot-started-speaking
-  7.93s bot-stopped-speaking
-  7.93s bot said: Hi there, I'm Willow. How can I help you today?
-  8.93s speaking 4.0s of audio: 'What is the capital of Japan? One sentence please.'
-  9.87s user-started-speaking
- 13.51s user-stopped-speaking
- 13.77s user-transcription What is the capital of Japan? One sentence, please.
- 13.91s bot-started-speaking
- 15.34s bot-stopped-speaking
- 15.34s bot said: The capital of Japan is Tokyo.
+  1.76s joined room probe-fd76c3e9; waiting for the agent
+  2.83s agent speaking
+  6.81s agent said: Hi, this is Willow. How can I help you today?
+  6.85s agent listening
+  7.85s speaking 3.3s of audio: 'What is the capital of France? One sentence.'
+ 11.85s you said: What is the capital of France? One sentence.
+ 11.98s agent speaking
+ 14.19s agent said: The capital of France is Paris.
+ 14.30s agent listening
 ```
 
-The turn latency, from `user-stopped-speaking` to `bot-started-speaking`, is 0.40 s here.
-That is the same as Part 6. On one machine, the extra hop through the LiveKit server costs
-nothing you can measure.
+The `agent speaking` / `agent listening` lines come from the `lk.agent.state` attribute
+that every LiveKit agent publishes. The transcripts come from LiveKit's
+`lk.transcription` text streams. Your own client can use both.
+
+> **⚠ This will bite you: publish the microphone as a microphone.**
+> An agent only listens to audio tracks whose source is `SOURCE_MICROPHONE`. A custom
+> client that publishes a track without setting the source joins the room fine, and the
+> agent never hears it. `probe.py` sets it in `publish_track`.
 
 ---
 
 ## Where to go from here
 
-- **Deploy.** `bot.py` is an ordinary Python process. Put it in a container next to a
-  LiveKit server, or use LiveKit Cloud and run only the bot. Replace the development
-  runner's `/start` with your own endpoint that creates rooms and signs tokens for your
-  users.
-- **Phones.** Configure LiveKit SIP to send inbound calls to a room, and have your
-  endpoint start a bot in it.
-- **The other way round.** If your stack is already built on LiveKit Agents rather than
-  Pipecat, Boson has a LiveKit Agents plugin as well. It is in review upstream as
-  [livekit/agents#6340](https://github.com/livekit/agents/pull/6340).
+- **Tools.** Decorate a method of `Willow` with `@function_tool`, as in the plugin's
+  [example agent](https://github.com/helin-mktech/agents/blob/1e32b31795066f45c81b634e642c97ef22ba5937/livekit-plugins/livekit-plugins-boson/examples/agent.py).
+  The model calls it and speaks the result.
+- **Deploy.** The worker is an ordinary process: run it next to your LiveKit server, or
+  against LiveKit Cloud. Your backend signs room tokens for your users, as
+  `probe.py`'s `user_token()` does.
+- **Phones.** Configure LiveKit SIP to send inbound calls to a room, and your worker
+  answers them.
 
 ← [Part 6 — A two-stage voice agent with Pipecat](part-6.md)

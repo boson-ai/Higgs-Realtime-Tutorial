@@ -5,10 +5,13 @@ playground: open a page, press Connect, and talk to Higgs. The agent is about a 
 of Python, it uses Boson's public production API, and it never shows your API key to the
 browser.
 
-Parts 0–5 built everything by hand, in the browser. This part does the opposite: it hands
-the audio plumbing to a framework, so you can see how little is left once someone else
-owns the microphone, the resampling and the interruptions. You do not need Parts 1–5 to
-follow it, but Part 0's warning about API keys still applies.
+Parts 0–5 built everything by hand, in the browser. Parts 6 and 7 do the opposite: they
+hand the audio plumbing to an open-source agent framework, so you can see how little is
+left once someone else owns the microphone, the resampling and the interruptions. This
+part uses [Pipecat](https://docs.pipecat.ai/); [Part 7](part-7.md) builds the same agent
+with [LiveKit Agents](https://docs.livekit.io/agents/). The two are parallel: pick the
+framework your stack already uses. Neither needs Parts 1–5, but Part 0's warning about
+API keys still applies.
 
 API facts on this page were checked against `api.boson.ai` on 2026-10-15.
 
@@ -91,8 +94,10 @@ open that page in Chrome, press **Connect**, and allow the microphone. Willow gr
 answer it. Interrupt a long answer and it stops.
 
 That page is the **Pipecat playground**: a prebuilt client that ships with
-`pipecat-ai[runner]`. It shows captions for both sides, a microphone picker and a
-connection log. You did not write any of it.
+`pipecat-ai[runner]`. It shows the conversation, a microphone picker and a log of every
+event. You did not write any of it.
+
+![The Pipecat playground after one question: Willow's greeting, the spoken question and the answer in the Conversation pane, and the RTVI events below](images/pipecat-playground.png)
 
 > **⚠ This will bite you: open it on `localhost`, from the same machine.**
 > Browsers only allow the microphone on `https://` pages or on `localhost`. If `bot.py`
@@ -243,7 +248,7 @@ Tools work the same way as in Part 4: write an async Python function, then pass 
 [pipecat-boson README](https://github.com/boson-ai/pipecat-boson#call-python-functions)
 has a complete example.
 
-The [next part](part-7.md) changes one line in the run command to take the same agent
-through LiveKit.
+[Part 7](part-7.md) builds the same agent with LiveKit Agents. If your product already
+runs on LiveKit, that is the one to follow.
 
-← [Part 5 — Prompting](part-5.md) · [Part 7 — The same agent on LiveKit](part-7.md) →
+← [Part 5 — Prompting](part-5.md) · [Part 7 — The same agent with LiveKit Agents](part-7.md) →

@@ -2,7 +2,6 @@
 
     uv run probe.py                                   # greeting only
     uv run probe.py --say "what's the capital of France?"
-    uv run probe.py --transport livekit --say "..."  # against bot.py -t livekit
     uv run probe.py --save reply.wav                  # keep what the bot said
 
 It starts a call through the same endpoint the playground uses (POST /start),
@@ -25,7 +24,6 @@ from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
 from aiortc.mediastreams import MediaStreamError
 from av import AudioFrame
 from dotenv import load_dotenv
-from livekit import rtc
 
 RATE = 24_000
 FRAME = RATE // 50  # 20 ms
@@ -78,7 +76,7 @@ class MicrophoneTrack(MediaStreamTrack):
 
 
 class Call:
-    """What both transports share: the RTVI messages and the turn count."""
+    """The RTVI messages the bot sends, and the turn count."""
 
     def __init__(self, turns_wanted: int):
         self.t0 = time.monotonic()
@@ -124,9 +122,9 @@ class Call:
             self.log(kind)
 
 
-async def start(url: str, transport: str) -> dict:
+async def start(url: str) -> dict:
     """POST /start — the same call the playground makes when you press Connect."""
-    async with aiohttp.ClientSession() as http, http.post(f"{url}/start", json={"transport": transport}) as response:
+    async with aiohttp.ClientSession() as http, http.post(f"{url}/start", json={"transport": "webrtc"}) as response:
         response.raise_for_status()
         return await response.json()
 
@@ -150,7 +148,7 @@ async def connect_webrtc(url: str, call: Call, mic: Microphone):
 
         asyncio.ensure_future(drain())
 
-    session_id = (await start(url, "webrtc"))["sessionId"]
+    session_id = (await start(url))["sessionId"]
     await pc.setLocalDescription(await pc.createOffer())
     offer = {"sdp": pc.localDescription.sdp, "type": "offer"}
     async with (
@@ -163,54 +161,6 @@ async def connect_webrtc(url: str, call: Call, mic: Microphone):
     call.log("WebRTC connected; waiting for the greeting")
     # WebRTC delivers the bot as 48 kHz stereo.
     return pc.close, (2, 48_000)
-
-
-async def connect_livekit(url: str, call: Call, mic: Microphone):
-    session = await start(url, "livekit")  # {url, token}: a room and a user token
-    room = rtc.Room()
-    room.on("data_received", lambda packet: call.on_rtvi(packet.data))
-    streams: list[rtc.AudioStream] = []
-    tasks: list[asyncio.Task] = []
-    bot_publishing = asyncio.Event()
-
-    @room.on("track_subscribed")
-    def on_track(track, publication, participant):
-        stream = rtc.AudioStream(track, sample_rate=RATE, num_channels=1)
-        streams.append(stream)
-        bot_publishing.set()
-
-        async def drain():
-            async for event in stream:
-                call.received.extend(bytes(event.frame.data))
-
-        tasks.append(asyncio.ensure_future(drain()))
-
-    await room.connect(session["url"], session["token"])
-    source = rtc.AudioSource(RATE, 1)
-    await room.local_participant.publish_track(rtc.LocalAudioTrack.create_audio_track("mic", source))
-
-    async def pump():
-        while True:
-            chunk = await mic.next_chunk()
-            await source.capture_frame(rtc.AudioFrame(chunk.tobytes(), RATE, 1, FRAME))
-
-    tasks.append(asyncio.ensure_future(pump()))
-    # Data packets are not kept for participants who join later. The bot may
-    # still be joining, so wait until it is publishing before saying ready.
-    await bot_publishing.wait()
-    await room.local_participant.publish_data(Call.CLIENT_READY, reliable=True)
-    call.log(f"joined LiveKit room {room.name}; waiting for the greeting")
-
-    async def close():
-        for task in tasks:
-            task.cancel()
-        await asyncio.gather(*tasks, return_exceptions=True)
-        for stream in streams:
-            await stream.aclose()
-        await room.disconnect()
-        await source.aclose()
-
-    return close, (1, RATE)
 
 
 async def synthesise(text: str) -> bytes:
@@ -228,12 +178,11 @@ async def synthesise(text: str) -> bytes:
         return await response.read()
 
 
-async def main(url: str, transport: str, say: str | None, save: str | None, timeout: float):
+async def main(url: str, say: str | None, save: str | None, timeout: float):
     speech = await synthesise(say) if say else None
     call = Call(turns_wanted=2 if say else 1)
     mic = Microphone()
-    connect = connect_livekit if transport == "livekit" else connect_webrtc
-    close, (channels, rate) = await connect(url, call, mic)
+    close, (channels, rate) = await connect_webrtc(url, call, mic)
     try:
         if speech:
             await asyncio.wait_for(call.greeted.wait(), timeout)
@@ -261,9 +210,8 @@ if __name__ == "__main__":
     load_dotenv(override=True)
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--url", default="http://localhost:7860", help="where bot.py is running")
-    parser.add_argument("--transport", choices=["webrtc", "livekit"], default="webrtc")
     parser.add_argument("--say", help="speak this sentence after the greeting")
     parser.add_argument("--save", help="write everything the bot said to this WAV file")
     parser.add_argument("--timeout", type=float, default=60)
     args = parser.parse_args()
-    asyncio.run(main(args.url.rstrip("/"), args.transport, args.say, args.save, args.timeout))
+    asyncio.run(main(args.url.rstrip("/"), args.say, args.save, args.timeout))

@@ -3,7 +3,7 @@ name = "higgs-pipecat-tutorial"
 version = "0.1.0"
 requires-python = ">=3.11,<3.14"
 dependencies = [
-    "pipecat-ai[runner,webrtc,livekit]==1.12.0",
+    "pipecat-ai[runner,webrtc]==1.12.0",
     "pipecat-boson",
     "python-dotenv",
     "aiohttp",
@@ -13,9 +13,10 @@ dependencies = [
 package = false
 
 [tool.uv.sources]
-# output_audio_model is in boson-ai/pipecat-boson#8. Switch to the PyPI release
-# (pipecat-boson>=0.1.4) once it is published.
-pipecat-boson = { git = "https://github.com/YHPeter/pipecat-boson", rev = "eacce0010e4a9148cb28ee97526a26a43987991b" }
+# output_audio_model (boson-ai/pipecat-boson#8) and the playground's conversation
+# text (boson-ai/pipecat-boson#9). Switch to the PyPI release (pipecat-boson>=0.1.4)
+# once both are published.
+pipecat-boson = { git = "https://github.com/YHPeter/pipecat-boson", rev = "18327f3f92db61799500de666f24f7014ffc90cd" }
 
 [tool.ruff]
 line-length = 119

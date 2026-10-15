@@ -5,11 +5,9 @@
                       writes the reply)
 
 Both stages run on Boson's servers behind one WebSocket; this process only moves
-audio between the caller's transport and that WebSocket. The same file runs on
-any Pipecat transport:
+audio between the caller and that WebSocket.
 
     uv run bot.py                   # Pipecat playground at http://localhost:7860
-    uv run bot.py -t livekit        # a LiveKit room (Part 7)
 """
 
 import asyncio
@@ -26,7 +24,6 @@ from pipecat.processors.frameworks.rtvi import RTVIProcessor
 from pipecat.runner.types import RunnerArguments
 from pipecat.runner.utils import create_transport
 from pipecat.transports.base_transport import TransportParams
-from pipecat.transports.livekit.transport import LiveKitParams
 from pipecat.workers.runner import WorkerRunner
 from pipecat_boson.realtime import BosonRealtimeLLMService
 
@@ -55,13 +52,10 @@ def make_llm() -> BosonRealtimeLLMService:
 
 
 async def bot(runner_args: RunnerArguments):
-    # Each transport has its own params class; both just need audio in and out.
+    # The playground connects over WebRTC; the bot needs audio in and out.
     transport = await create_transport(
         runner_args,
-        {
-            "webrtc": lambda: TransportParams(audio_in_enabled=True, audio_out_enabled=True),
-            "livekit": lambda: LiveKitParams(audio_in_enabled=True, audio_out_enabled=True),
-        },
+        {"webrtc": lambda: TransportParams(audio_in_enabled=True, audio_out_enabled=True)},
     )
 
     llm = make_llm()

@@ -19,25 +19,22 @@ before — both are explained where they first come up.
 | [4](docs/part-4.md) | Tool calling — a dummy web search the model actually uses | `part-4` |
 | [5](docs/part-5.md) | Prompting — a testable structure for the system prompt | `part-5` |
 
-### The Pipecat track
+### With an agent framework
 
-Parts 6 and 7 build the same kind of agent on the server instead, with
-[Pipecat](https://docs.pipecat.ai/). They need Python and
-[uv](https://docs.astral.sh/uv/), not Node, and do not depend on Parts 1–5.
+Parts 6 and 7 build the same agent on the server instead, with an open-source voice agent
+framework. They are parallel tracks, not a sequence: pick the framework your stack
+already uses. Both use the two-stage pipeline (`higgs-realtime` hears and thinks,
+`higgs-realtime-tts` speaks) on the production API, both come with a browser playground
+to talk to it, and neither depends on Parts 1–5. They need Python and
+[uv](https://docs.astral.sh/uv/), not Node.
 
-| Part | What you build |
-| --- | --- |
-| [6](docs/part-6.md) | A two-stage agent (`higgs-realtime` → `higgs-realtime-tts`) in the Pipecat playground, on the production API |
-| [7](docs/part-7.md) | The same agent through a LiveKit room |
+| Part | Framework | Run it | Talk to it in |
+| --- | --- | --- | --- |
+| [6](docs/part-6.md) | [Pipecat](https://docs.pipecat.ai/) | `cd pipecat && uv run bot.py` | the Pipecat playground at `http://localhost:7860` |
+| [7](docs/part-7.md) | [LiveKit Agents](https://docs.livekit.io/agents/) | `livekit-server --dev`, then `cd livekit && uv run agent.py dev` | the LiveKit Agents Playground at `http://localhost:3000` |
 
-```bash
-cd pipecat
-cp .env.example .env    # then add your key
-uv run bot.py           # open http://localhost:7860
-```
-
-Each part that adds code ends with an acceptance check you can run yourself. Do not move on until it
-passes — every part builds directly on the one before it.
+Each folder has a `.env.example` to copy to `.env` with your key, and a `probe.py` that
+places a call headlessly as the acceptance check.
 
 ## Checkpoints
 
