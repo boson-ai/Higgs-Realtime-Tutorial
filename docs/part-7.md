@@ -156,24 +156,25 @@ creates a room, the server sends your worker into it, and Willow greets you.
 
 `probe.py` joins a room the way the playground does, without a browser. It signs a token
 with your LiveKit key, waits for the greeting, and speaks a sentence synthesised with
-Boson's TTS:
+Boson's TTS. Keep `livekit-server` and `agent.py dev` running, and open a fourth terminal
+in the tutorial's `livekit/` folder (the playground can stay open or be stopped):
 
 ```bash
-uv run probe.py --say "What is the capital of France? One sentence."
+cd livekit
+uv run probe.py --say "What is the capital of Spain? One sentence."
 ```
 
 Expected output (run on 2026-10-15):
 
 ```
-  1.76s joined room probe-fd76c3e9; waiting for the agent
-  2.83s agent speaking
-  6.81s agent said: Hi, this is Willow. How can I help you today?
-  6.85s agent listening
-  7.85s speaking 3.3s of audio: 'What is the capital of France? One sentence.'
- 11.85s you said: What is the capital of France? One sentence.
- 11.98s agent speaking
- 14.19s agent said: The capital of France is Paris.
- 14.30s agent listening
+  3.00s joined room probe-db2f4bad; waiting for the agent
+  4.08s agent speaking
+  6.03s agent said: Hi there, how can I help you today?
+  6.56s agent listening
+  7.03s speaking 3.6s of audio: 'What is the capital of Spain? One sentence.'
+ 11.39s you said: What is the capital of Spain? One sentence.
+ 11.71s agent speaking
+ 13.84s agent said: The capital of Spain is Madrid.
 ```
 
 The `agent speaking` / `agent listening` lines come from the `lk.agent.state` attribute

@@ -64,14 +64,17 @@ async def main(say: str | None, timeout: float):
         state = changed.get("lk.agent.state")
         if state:
             log("agent", state)
-            if state == "listening":
-                turns.put_nowait(state)
 
     async def read_transcript(reader, participant_identity):
         text = await reader.read_all()
         if reader.info.attributes.get("lk.transcription_final") == "true" and text.strip():
-            who = "agent said:" if participant_identity != room.local_participant.identity else "you said:"
-            log(who, text.strip())
+            if participant_identity == room.local_participant.identity:
+                log("you said:", text.strip())
+            else:
+                log("agent said:", text.strip())
+                # A turn is over when the agent's whole reply is in. Its "listening"
+                # state is not enough: the agent also enters it once while starting up.
+                turns.put_nowait(text.strip())
 
     room.register_text_stream_handler(
         "lk.transcription",
@@ -105,14 +108,12 @@ async def main(say: str | None, timeout: float):
 
     tasks.append(asyncio.ensure_future(microphone()))
     try:
-        # The agent goes back to listening after each reply; the first is the greeting.
-        await asyncio.wait_for(turns.get(), timeout)
+        await asyncio.wait_for(turns.get(), timeout)  # the greeting
         if speech:
             await asyncio.sleep(1.0)
             log(f"speaking {len(speech) / 2 / RATE:.1f}s of audio: {say!r}")
             queue = np.frombuffer(speech, dtype=np.int16)
-            await asyncio.wait_for(turns.get(), timeout)
-        await asyncio.sleep(0.5)  # let the last transcript arrive
+            await asyncio.wait_for(turns.get(), timeout)  # the answer
     finally:
         for task in tasks:
             task.cancel()

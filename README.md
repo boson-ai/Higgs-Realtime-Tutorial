@@ -25,8 +25,8 @@ Parts 6 and 7 build the same agent on the server instead, with an open-source vo
 framework. They are parallel tracks, not a sequence: pick the framework your stack
 already uses. Both use the two-stage pipeline (`higgs-realtime` hears and thinks,
 `higgs-realtime-tts` speaks) on the production API, both come with a browser playground
-to talk to it, and neither depends on Parts 1–5. They need Python and
-[uv](https://docs.astral.sh/uv/), not Node.
+to talk to it, and neither depends on Parts 1–5. The agents need Python and
+[uv](https://docs.astral.sh/uv/); Part 7's playground also needs Node.js and `pnpm`.
 
 | Part | Framework | Run it | Talk to it in |
 | --- | --- | --- | --- |
