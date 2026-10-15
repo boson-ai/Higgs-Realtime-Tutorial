@@ -19,6 +19,23 @@ before — both are explained where they first come up.
 | [4](docs/part-4.md) | Tool calling — a dummy web search the model actually uses | `part-4` |
 | [5](docs/part-5.md) | Prompting — a testable structure for the system prompt | `part-5` |
 
+### The Pipecat track
+
+Parts 6 and 7 build the same kind of agent on the server instead, with
+[Pipecat](https://docs.pipecat.ai/). They need Python and
+[uv](https://docs.astral.sh/uv/), not Node, and do not depend on Parts 1–5.
+
+| Part | What you build |
+| --- | --- |
+| [6](docs/part-6.md) | A two-stage agent (`higgs-realtime` → `higgs-realtime-tts`) in the Pipecat playground, on the production API |
+| [7](docs/part-7.md) | The same agent through a LiveKit room |
+
+```bash
+cd pipecat
+cp .env.example .env    # then add your key
+uv run bot.py           # open http://localhost:7860
+```
+
 Each part that adds code ends with an acceptance check you can run yourself. Do not move on until it
 passes — every part builds directly on the one before it.
 

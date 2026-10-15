@@ -1,0 +1,21 @@
+[project]
+name = "higgs-pipecat-tutorial"
+version = "0.1.0"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "pipecat-ai[runner,webrtc,livekit]==1.12.0",
+    "pipecat-boson",
+    "python-dotenv",
+    "aiohttp",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+# output_audio_model is in boson-ai/pipecat-boson#8. Switch to the PyPI release
+# (pipecat-boson>=0.1.4) once it is published.
+pipecat-boson = { git = "https://github.com/YHPeter/pipecat-boson", rev = "eacce0010e4a9148cb28ee97526a26a43987991b" }
+
+[tool.ruff]
+line-length = 119

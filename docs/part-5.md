@@ -138,4 +138,4 @@ That is the tutorial. You have a browser voice assistant that listens, answers, 
 interruption correctly, keeps an accurate transcript, calls a tool when it does not know
 something, and a prompt you can reason about instead of one you accreted.
 
-← [Part 4 — Tool calling](part-4.md)
+← [Part 4 — Tool calling](part-4.md) · [Part 6 — The same agent with Pipecat](part-6.md) →
