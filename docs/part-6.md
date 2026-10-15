@@ -36,6 +36,7 @@ endpoint; it tells the session which TTS model to use, and audio comes back.
 You can check that your key can reach both models:
 
 ```bash
+export BOSON_API_KEY=bai-…   # your key; only for this terminal
 curl -s https://api.boson.ai/v1/models -H "Authorization: Bearer $BOSON_API_KEY" \
   | python3 -c "import sys, json; print([m['id'] for m in json.load(sys.stdin)['data'] if 'realtime' in m['id']])"
 # ['higgs-realtime', 'higgs-realtime-tts', ...]

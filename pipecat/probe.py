@@ -36,7 +36,6 @@ SHOWN = {
     "user-transcription",
     "bot-started-speaking",
     "bot-stopped-speaking",
-    "error",
 }
 
 
@@ -87,6 +86,7 @@ class Call:
         self.turns = 0
         self.greeted = asyncio.Event()
         self.done = asyncio.Event()
+        self.failure: str | None = None
         self.bot_text: list[str] = []
         self.received = bytearray()
 
@@ -114,6 +114,12 @@ class Call:
         elif kind == "user-transcription":
             if data.get("final"):
                 self.log(kind, data.get("text", ""))
+        elif kind == "error":
+            self.log("error:", data.get("error"))
+            if data.get("fatal"):
+                self.failure = data.get("error") or "fatal error"
+                self.greeted.set()
+                self.done.set()
         elif kind in SHOWN:
             self.log(kind)
 
@@ -164,17 +170,20 @@ async def connect_livekit(url: str, call: Call, mic: Microphone):
     room = rtc.Room()
     room.on("data_received", lambda packet: call.on_rtvi(packet.data))
     streams: list[rtc.AudioStream] = []
+    tasks: list[asyncio.Task] = []
+    bot_publishing = asyncio.Event()
 
     @room.on("track_subscribed")
     def on_track(track, publication, participant):
         stream = rtc.AudioStream(track, sample_rate=RATE, num_channels=1)
         streams.append(stream)
+        bot_publishing.set()
 
         async def drain():
             async for event in stream:
                 call.received.extend(bytes(event.frame.data))
 
-        asyncio.ensure_future(drain())
+        tasks.append(asyncio.ensure_future(drain()))
 
     await room.connect(session["url"], session["token"])
     source = rtc.AudioSource(RATE, 1)
@@ -185,12 +194,17 @@ async def connect_livekit(url: str, call: Call, mic: Microphone):
             chunk = await mic.next_chunk()
             await source.capture_frame(rtc.AudioFrame(chunk.tobytes(), RATE, 1, FRAME))
 
-    pumping = asyncio.ensure_future(pump())
+    tasks.append(asyncio.ensure_future(pump()))
+    # Data packets are not kept for participants who join later. The bot may
+    # still be joining, so wait until it is publishing before saying ready.
+    await bot_publishing.wait()
     await room.local_participant.publish_data(Call.CLIENT_READY, reliable=True)
     call.log(f"joined LiveKit room {room.name}; waiting for the greeting")
 
     async def close():
-        pumping.cancel()
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
         for stream in streams:
             await stream.aclose()
         await room.disconnect()
@@ -223,12 +237,16 @@ async def main(url: str, transport: str, say: str | None, save: str | None, time
     try:
         if speech:
             await asyncio.wait_for(call.greeted.wait(), timeout)
+            if call.failure:
+                raise SystemExit(f"FAIL: {call.failure}")
             await asyncio.sleep(1.0)
             call.log(f"speaking {len(speech) / 2 / RATE:.1f}s of audio: {say!r}")
             mic.say(speech)
         await asyncio.wait_for(call.done.wait(), timeout)
     finally:
         await close()
+    if call.failure:
+        raise SystemExit(f"FAIL: {call.failure}")
 
     if save:
         with wave.open(save, "wb") as out:

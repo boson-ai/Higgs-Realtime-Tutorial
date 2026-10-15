@@ -22,8 +22,9 @@ browser ──► LiveKit server (a "room") ◄── bot.py ──► wss://api
 The caller and the bot both *join a room*. That one extra hop buys several things you will
 want sooner or later:
 
-- **Real networks.** LiveKit handles NAT traversal, TURN and reconnection. SmallWebRTC
-  needs both ends to reach each other directly.
+- **Real networks.** LiveKit runs its own TURN and handles reconnection. SmallWebRTC can
+  use a TURN server too (`bot.py --ice-servers …`), but you run and configure it
+  yourself. With this tutorial's defaults, both ends must reach each other directly.
 - **Clients.** LiveKit has SDKs for iOS, Android, Flutter, Unity and the web, all of which
   can join the same room as your bot.
 - **Phone calls.** LiveKit SIP brings a phone number into a room as just another
@@ -85,8 +86,9 @@ Here is what happens when you press Connect:
 2. The development runner creates a room, signs two tokens with your LiveKit key — one for
    the bot and one for you — and starts the bot with its token.
 3. The playground receives `{url, token}` and joins the same room.
-4. Audio and RTVI messages now travel through the LiveKit server, as LiveKit data packets
-   instead of a WebRTC data channel.
+4. Everything now travels through the LiveKit server. Audio is still WebRTC media tracks,
+   now published to the room. The RTVI messages become LiveKit data packets instead of
+   messages on a peer-to-peer data channel.
 
 ### What changed in `bot.py`
 
