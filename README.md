@@ -19,8 +19,23 @@ before — both are explained where they first come up.
 | [4](docs/part-4.md) | Tool calling — a dummy web search the model actually uses | `part-4` |
 | [5](docs/part-5.md) | Prompting — a testable structure for the system prompt | `part-5` |
 
-Each part that adds code ends with an acceptance check you can run yourself. Do not move on until it
-passes — every part builds directly on the one before it.
+### With an agent framework
+
+Parts 6 and 7 build the same agent on the server instead, with an open-source voice agent
+framework. They are parallel tracks, not a sequence: pick the framework your stack
+already uses. Both run the same Higgs Realtime agent on the production API, both come
+with a browser playground
+to talk to it, and neither depends on Parts 1–5. The agents need Python and
+[uv](https://docs.astral.sh/uv/); Part 7's playground also needs Node.js and `pnpm`.
+
+| Part | Framework | Run it | Talk to it in |
+| --- | --- | --- | --- |
+| [6](docs/part-6.md) | [Pipecat](https://docs.pipecat.ai/) | `cd pipecat && uv run bot.py` | the Pipecat playground at `http://localhost:7860` |
+| [7](docs/part-7.md) | [LiveKit Agents](https://docs.livekit.io/agents/) | `livekit-server --dev`, then `cd livekit && uv run agent.py dev` | the LiveKit Agents Playground at `http://localhost:3000` |
+
+Both agents call tools, a web search and the time, which run in your own process. Each
+folder has a `.env.example` to copy to `.env` with your key, and a `probe.py` that places a
+call headlessly and asks a question the agent can only answer with its search tool.
 
 ## Checkpoints
 

@@ -1,0 +1,25 @@
+[project]
+name = "higgs-livekit-tutorial"
+version = "0.1.0"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "livekit-agents",
+    "livekit-plugins-openai",
+    "livekit-plugins-boson",
+    "python-dotenv",
+    "aiohttp",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+# The Boson plugin is in review upstream (livekit/agents#6340). Until it is
+# released, take it, and the agents/openai packages it was built against, from
+# the PR's commit.
+livekit-agents = { git = "https://github.com/helin-mktech/agents", subdirectory = "livekit-agents", rev = "1e32b31795066f45c81b634e642c97ef22ba5937" }
+livekit-plugins-openai = { git = "https://github.com/helin-mktech/agents", subdirectory = "livekit-plugins/livekit-plugins-openai", rev = "1e32b31795066f45c81b634e642c97ef22ba5937" }
+livekit-plugins-boson = { git = "https://github.com/helin-mktech/agents", subdirectory = "livekit-plugins/livekit-plugins-boson", rev = "1e32b31795066f45c81b634e642c97ef22ba5937" }
+
+[tool.ruff]
+line-length = 119
