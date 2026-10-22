@@ -59,7 +59,7 @@ async def entrypoint(ctx: JobContext) -> None:
     session = AgentSession(
         llm=boson.realtime.RealtimeModel(
             api_key=os.environ["BOSON_API_KEY"],
-            model="higgs-realtime",
+            model="higgs-realtime-1.5-preview",
             voice="default",
             input_audio_transcription_model="higgs-stt-3.1",
         ),
@@ -87,30 +87,38 @@ the playground shows in its chat. The model hears the audio itself and does not 
 ### Tools: web search and the time
 
 ```python
-class Willow(Agent):
-    ...
-
-    @function_tool
-    async def web_search(self, context: RunContext, query: str, topic: str | None = None) -> dict:
-        """Search the web. Call this whenever the caller asks about anything current or local
-        (news, weather, sport results, opening hours) or anything you are not sure of.
-
-        Args:
-            query: What the caller is looking for, in their own words.
-            topic: Optional filter: news, weather, sports, science or travel.
-        """
-        return await tools.web_search(query, topic)
+session = AgentSession(
+    llm=server_tools.RealtimeModel(
+        api_key=os.environ["BOSON_API_KEY"],
+        model="higgs-realtime-1.5-preview",
+        voice="default",
+        server_tools=[{"type": "web_search"}],
+    ),
+)
 ```
 
-A method decorated with `@function_tool` is a tool. LiveKit reads its type hints and
-docstring as the schema, runs it **in this worker** when the model calls it, and sends the
-return value back; the model then answers out loud. Because it runs in your process, a
-tool can do anything your server can: query your database, call your own APIs.
+Willow has the same two tools as in Part 6, and the same split: who runs it.
 
-The tools are the same as Part 6's, from the same [`tools.py`](../livekit/tools.py):
-`web_search` searches the ten fictional pages of Part 4 (`src/tools/searchIndex.json`), or
-the real web with [Parallel](https://parallel.ai/) when `PARALLEL_API_KEY` is set, and
-`get_current_time` reads the clock. The worker logs every search.
+**Web search runs on Boson's servers.** Declaring `{"type": "web_search"}` is all it
+takes. When a question needs current information, the model says a short "let me check",
+the server searches the web, and the model speaks the answer. There is no method to write
+and nothing to send back.
+
+**`get_current_time` runs in this worker.** A method decorated with `@function_tool` is a
+tool. LiveKit reads its type hints and docstring as the schema, runs it here when the
+model calls it, and sends the return value back.
+
+The Boson LiveKit plugin does not know about server-side tools yet, so
+[`livekit/server_tools.py`](../livekit/server_tools.py) adds what it needs, in about
+forty lines: it puts `server_tools` into the session, and it skips calls marked
+`"executor": "server"` instead of handing them to the agent, which would otherwise answer
+them with an error. It also logs each search and the pages it read, as Part 6's `bot.py`
+does:
+
+```
+Searching the web (web_search)
+Web search sources: https://weather.com/weather/today/l/…, https://www.accuweather.com/…
+```
 
 ---
 
@@ -185,32 +193,23 @@ in the tutorial's `livekit/` folder (the playground can stay open or be stopped)
 
 ```bash
 cd livekit
-uv run probe.py --say "Who won the Willow Creek regional final?"
+uv run probe.py --say "What's the weather in Tokyo today?"
 ```
 
-Expected output (run on 2026-10-15):
+Expected output:
 
 ```
-  1.44s joined room probe-aceaa942; waiting for the agent
-  4.59s agent speaking
-  6.92s agent said: Hello, how can I help you today?
-  6.92s agent listening
-  7.92s typing: 'Who won the Willow Creek regional final?'
-  8.32s agent thinking
-  8.88s agent speaking
- 16.69s agent said: The Willow Creek Otters won the regional final, beating Eastport 3 to 2 on a stoppage-time goal by Ada Okafor.
+  9.34s agent said: Hello, how can I help you today?
+ 10.34s typing: "What's the weather in Tokyo today?"
+ 12.74s agent said: Let me check that for you real quick.
+ 17.14s agent said: It's currently fair and 72 degrees Fahrenheit in Tokyo.
 ```
 
-and the worker logs the search it ran:
+and the worker logs the search and the pages it read. A "let me check" followed by today's
+weather means the web search ran. Ask "What time is it in Tokyo?" to try
+`get_current_time`.
 
-```
-web_search('Willow Creek regional final winner', topic='sports')
-```
-
-Naming the Otters and Ada Okafor proves the tool ran: that answer exists only in the
-fictional index.
-
-The `agent speaking` / `agent listening` lines come from the `lk.agent.state` attribute
+The probe also prints `agent speaking` / `agent listening` lines. They come from the `lk.agent.state` attribute
 that every LiveKit agent publishes. The agent's words come from LiveKit's
 `lk.transcription` text streams, and the typed question goes in on `lk.chat`. Your own
 client can use all three. Then talk to it in the playground, which tests the spoken path.
@@ -224,7 +223,8 @@ client can use all three. Then talk to it in the playground, which tests the spo
 
 ## Where to go from here
 
-- **More tools.** Add another `@function_tool` method to `Willow`.
+- **More tools.** Add another `@function_tool` method to `Willow`, or narrow the web
+  search with `allowed_domains`, `excluded_domains` or `location` on `{"type": "web_search"}`.
 - **Deploy.** The worker is an ordinary process: run it next to your LiveKit server, or
   against LiveKit Cloud. Your backend signs room tokens for your users, as
   `probe.py`'s `user_token()` does.

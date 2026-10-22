@@ -58,7 +58,7 @@ export function buildSessionConfig(): ClientEvent {
   return {
     type: "session.update",
     session: {
-      model: "higgs-realtime",
+      model: "higgs-realtime-1.5-preview",
       instructions: SYSTEM_PROMPT,
       // Exactly ["audio"] or exactly ["text"] — this is not a list you can mix.
       // Asking for audio still gives you a text transcript of what was spoken,

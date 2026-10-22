@@ -13,10 +13,7 @@ dependencies = [
 package = false
 
 [tool.uv.sources]
-# boson-ai/pipecat-boson#10 (the playground shows the bot's replies) and #11
-# (typed text gets a reply), combined. Switch to the PyPI release
-# (pipecat-boson>=0.1.4) once both are published.
-pipecat-boson = { git = "https://github.com/YHPeter/pipecat-boson", rev = "b5eddafddbe77599f68298ebbd549ada62c6614f" }
+pipecat-boson = { git = "https://github.com/boson-ai/pipecat-boson" }
 
 [tool.ruff]
 line-length = 119

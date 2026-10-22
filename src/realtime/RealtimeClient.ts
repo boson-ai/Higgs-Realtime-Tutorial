@@ -18,7 +18,7 @@ import { CLIENT_TOOL_RESULT } from "../state/transcriptStore";
 
 // The model can also be set in session.update; passing it in the URL means the
 // server knows which model you want before the first byte of config arrives.
-const WS_URL = "wss://api.boson.ai/v1/realtime?model=higgs-realtime";
+const WS_URL = "wss://api.boson.ai/v1/realtime?model=higgs-realtime-1.5-preview";
 
 export type ConnectionState = "idle" | "connecting" | "open" | "closing" | "closed";
 

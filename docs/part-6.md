@@ -104,7 +104,7 @@ Everything is in [`pipecat/bot.py`](../pipecat/bot.py). There are four pieces.
 BosonRealtimeLLMService(
     url="wss://api.boson.ai/v1/realtime/",
     api_key=os.environ["BOSON_API_KEY"],
-    model="higgs-realtime",
+    model="higgs-realtime-1.5-preview",
     voice="default",
     instructions=INSTRUCTIONS,
     input_audio_transcription_model="higgs-stt-3.1",
@@ -165,45 +165,65 @@ data channel — sends `client-ready` once the client is listening.
 ### 4. Tools: web search and the time
 
 ```python
-async def web_search(params: FunctionCallParams, query: str, topic: str | None = None) -> None:
-    """Search the web. Call this whenever the caller asks about anything current or local
-    (news, weather, sport results, opening hours) or anything you are not sure of.
+async def get_current_time(params: FunctionCallParams, timezone: str | None = None) -> None:
+    """Get the current date and time.
 
     Args:
-        query: What the caller is looking for, in their own words.
-        topic: Optional filter: news, weather, sports, science or travel.
+        timezone: Optional IANA time zone, for example Europe/Paris. Omit it for the server's time.
     """
-    await params.result_callback(await tools.web_search(query, topic))
+    await params.result_callback(tools.current_time(timezone))
 
 
-TOOLS = [web_search, get_current_time]
+TOOLS = ToolsSchema(
+    standard_tools=[get_current_time],
+    custom_tools={AdapterType.OPENAI: [{"type": "web_search"}]},
+)
 ```
 
-This is the tool calling of Part 4, with Pipecat doing the bookkeeping. The function's type
-hints and docstring become the schema the model sees. Pass the same list to
-`BosonRealtimeLLMService(tools=TOOLS)`, which advertises the tools in the session, and to
-`LLMContext(tools=TOOLS)`, which keeps them with the conversation. When the model calls
-one, Pipecat runs the function **in this process**, hands the result back, and the model
-answers out loud.
+Willow has two kinds of tool, and the difference is **who runs it**.
 
-Because it runs in your process, a tool can do anything your server can: query your
-database, call your own APIs, look up the caller's account. The two here live in
-[`pipecat/tools.py`](../pipecat/tools.py):
+**Web search runs on Boson's servers.** Declaring `{"type": "web_search"}` is all it
+takes: there is no function to write and no result to send back. When a question needs
+current information, the model says a short "let me check", the server searches the web,
+and the model speaks the answer. In Pipecat it goes in `custom_tools`, which passes it to
+the session as it is.
 
-- **`web_search`** searches the same ten fictional pages as Part 4
-  (`src/tools/searchIndex.json`). Nothing on the real internet knows who won the Willow
-  Creek regional final, so a correct answer proves the tool ran. Set `PARALLEL_API_KEY` in
-  `.env` and it searches the real web with [Parallel](https://parallel.ai/) instead.
-- **`get_current_time`** answers "what time is it in Tokyo?" from this machine's clock.
+**`get_current_time` runs in this process.** This is the tool calling of Part 4, with
+Pipecat doing the bookkeeping. The function's type hints and docstring become the schema
+the model sees; when the model calls it, Pipecat runs it here and hands the result back.
+Because it runs in your process, a tool like this can do anything your server can: query
+your database, call your own APIs, look up the caller's account.
 
-The instructions tell Willow to search rather than guess. Part 4's advice on shaping
-results for a voice — a short spoken summary, a count, the closest few results — is what
-`tools.py` returns.
+Pass the same `TOOLS` to `BosonRealtimeLLMService(tools=TOOLS)`, which advertises them in
+the session, and to `LLMContext(tools=TOOLS)`, which keeps them with the conversation.
 
-> **⚠ This will bite you: the playground does not show tool calls by default.**
-> Pipecat sends tool names and arguments to clients only if you opt in, with
-> `RTVIObserverParams(function_call_report_level=...)`. `bot.py` logs every search
-> instead; watch its terminal.
+The instructions tell Willow when to use each: search for anything current, answer in a
+sentence or two (search results are long, and everything is read aloud), and use
+`get_current_time` for the time rather than searching for it — a page about "the time in
+Tokyo" is out of date the moment it is indexed.
+
+#### Showing sources
+
+A search shows up as two conversation items: the call, marked `"executor": "server"`, and
+then its result. `bot.py` listens for them and logs the pages the search read:
+
+```
+Searching the web (web_search)
+Web search sources: https://weather.com/weather/today/l/…, https://www.accuweather.com/…
+```
+
+A client could show the same links as sources. The result text itself is written for the
+model and its format may change, so take nothing from it but the links
+(`tools.source_urls`).
+
+You can also narrow the search, with `allowed_domains` or `excluded_domains` (up to five
+bare hostnames such as `weather.gov`) and `location` (`{"country": "US"}`). See the
+[tool use guide](https://docs.boson.ai/models/higgs-realtime/guides/tool-calling#web-search).
+
+> **⚠ This will bite you: `web_search` is a reserved name.**
+> Don't name one of your own functions `web_search`, and don't answer a call whose
+> `executor` is `"server"`: the server runs it and continues by itself. `pipecat-boson`
+> leaves those calls alone for you.
 
 ---
 
@@ -218,35 +238,38 @@ for the greeting, and then types a question, as the playground's text box does:
 uv run bot.py
 
 # terminal 2
-uv run probe.py --say "Who won the Willow Creek regional final?"
+uv run probe.py --say "What's the weather in Tokyo today?"
 ```
 
-It should print something like this (run on 2026-10-15):
+It should print something like this:
 
 ```
-  5.14s WebRTC connected; waiting for the greeting
-  5.54s bot-ready
-  6.54s bot-started-speaking
-  9.10s bot said: Hello, how can I help you today?
- 10.10s typing: 'Who won the Willow Creek regional final?'
- 10.45s tool call
- 11.04s bot-started-speaking
- 19.40s bot said: The Willow Creek Otters won the regional final, beating Eastport 3 to 2 on a stoppage-time goal by Ada Okafor.
+  5.19s WebRTC connected; waiting for the greeting
+  5.58s bot-ready
+  6.47s bot-started-speaking
+  9.07s bot said: Hi there! How can I help you today?
+ 10.07s typing: "What's the weather in Tokyo today?"
+ 10.56s bot-started-speaking
+ 13.52s bot said: Let me check the current weather in Tokyo for you.
+ 13.87s bot-started-speaking
+ 18.15s bot said: It's currently 72 degrees Fahrenheit and fair in Tokyo.
 ```
 
-and `bot.py`'s terminal shows the search it ran:
+and `bot.py`'s terminal shows the search and the pages it read:
 
 ```
-web_search('Willow Creek regional final winner', topic='sports')
+Searching the web (web_search)
+Web search sources: https://weather.com/weather/today/l/…, https://www.accuweather.com/…
 ```
 
-If the bot greets you, your key, the model and the WebRTC path all work. If it then names
-the Otters and Ada Okafor, the tool ran: that answer exists only in the fictional index. If
-nothing happens after `bot-ready`, look in `bot.py`'s terminal for an authentication or
-model error. Leave out `--say` to check only the greeting.
+If the bot greets you, your key, the model and the WebRTC path all work. If it then says
+"let me check" and answers with today's weather, the web search ran. Ask "What time is it
+in Tokyo?" to try `get_current_time`. If nothing happens after `bot-ready`, look in
+`bot.py`'s terminal for an authentication or model error. Leave out `--say` to check only
+the greeting.
 
 Then open the playground and have a real conversation, preferably with headphones on. Ask
-it what's on in Willow Creek this weekend, interrupt a long answer, type a question into the
+it about today's news, interrupt a long answer, type a question into the
 text box, and check that the Conversation pane shows both sides.
 
 ---
@@ -259,8 +282,8 @@ text box, and check that the Conversation pane shows both sides.
 | The personality | `INSTRUCTIONS` in `bot.py`. Part 5's advice on structuring prompts applies unchanged |
 | Captions | `BOSON_CAPTION_MODEL=` (empty) turns them off |
 | The endpoint | `BOSON_REALTIME_URL`, for example an on-premises deployment's `ws://…/v1/realtime` |
-| Real web search | `PARALLEL_API_KEY` in `.env` |
-| More tools | Add a function to `TOOLS` in `bot.py` |
+| What web search may read | `allowed_domains`, `excluded_domains` or `location` on `{"type": "web_search"}` in `bot.py` |
+| More tools | Add a function to `standard_tools` in `bot.py` |
 
 [Part 7](part-7.md) builds the same agent with LiveKit Agents. If your product already
 runs on LiveKit, that is the one to follow.

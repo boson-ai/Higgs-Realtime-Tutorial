@@ -20,6 +20,7 @@ from livekit import api, rtc
 
 RATE = 24_000
 FRAME = RATE // 50  # 20 ms
+QUIET_SECONDS = 8.0
 
 
 def user_token(room: str) -> str:
@@ -63,6 +64,18 @@ async def main(say: str | None, timeout: float):
         lambda reader, identity: tasks.append(asyncio.ensure_future(read_transcript(reader, identity))),
     )
 
+    hung_up = asyncio.Event()
+    leaving = asyncio.Event()
+
+    @room.on("disconnected")
+    def on_disconnected(reason):
+        if leaving.is_set():
+            return  # we are leaving the room ourselves
+        # The agent closed the room (its end_call tool), or the connection dropped.
+        log("the agent ended the call")
+        hung_up.set()
+        turns.put_nowait(None)
+
     name = f"probe-{uuid.uuid4().hex[:8]}"
     await room.connect(os.environ["LIVEKIT_URL"], user_token(name))
     source = rtc.AudioSource(RATE, 1)
@@ -89,11 +102,20 @@ async def main(say: str | None, timeout: float):
             await asyncio.sleep(1.0)
             log(f"typing: {say!r}")
             await room.local_participant.send_text(say, topic="lk.chat")
-            await asyncio.wait_for(turns.get(), timeout)  # the answer
+            await asyncio.wait_for(turns.get(), timeout)  # the first reply
+            # A web search answers in two parts: a short "let me check" before it
+            # searches, then the answer once the search is done. Keep listening
+            # until the agent has been quiet for a while.
+            while not hung_up.is_set():
+                try:
+                    await asyncio.wait_for(turns.get(), QUIET_SECONDS)
+                except TimeoutError:
+                    break
     finally:
         for task in tasks:
             task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
+        leaving.set()
         await room.disconnect()
         await source.aclose()
 

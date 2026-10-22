@@ -9,58 +9,61 @@ LiveKit rooms and moves audio between the room and that WebSocket:
     uv run agent.py dev         # join rooms on LIVEKIT_URL; talk to it in the Agents Playground
 """
 
-import logging
 import os
 
 from dotenv import load_dotenv
-from livekit.agents import Agent, AgentServer, AgentSession, JobContext, RunContext, cli
+from livekit.agents import Agent, AgentServer, AgentSession, JobContext, RunContext, cli, get_job_context
 from livekit.agents.llm import function_tool
-from livekit.plugins import boson
 
+import server_tools
 import tools
-
-logger = logging.getLogger("willow")
 
 load_dotenv(override=True)
 
 INSTRUCTIONS = """\
-You are Willow, a friendly voice assistant. Keep every answer to one or two short
-spoken sentences. Never use lists, markdown or emoji: everything you write is read
-aloud. When the caller asks about anything current or local, use web_search instead of
-guessing."""
+You are Willow, a friendly voice assistant developed by Boson AI. Keep every
+answer to one or two short spoken sentences. Greet the caller in one sentence when the call
+starts. Always speak the language the caller is speaking, including while you look something up."""
+
+
+def instructions() -> str:
+    """The instructions, plus where the caller probably is, read at the start of each call."""
+    timezone = tools.local_timezone()
+    return (
+        f"{INSTRUCTIONS}\n\nThe caller is in the {timezone} time zone, so they are probably "
+        "somewhere near there. When they say here without naming a place, assume they mean there."
+    )
 
 
 class Willow(Agent):
     def __init__(self) -> None:
-        super().__init__(instructions=INSTRUCTIONS)
+        super().__init__(instructions=instructions())
 
     async def on_enter(self) -> None:
         # The model answers when the caller stops speaking. Speak first instead.
         self.session.generate_reply(instructions="Greet the caller in one short sentence.")
 
-    # Tools. The model decides to call one; LiveKit runs the method here, in this
-    # worker, and sends the result back to the model, which then answers out loud.
-    # The docstring and type hints become the schema the model sees.
-    @function_tool
-    async def web_search(self, context: RunContext, query: str, topic: str | None = None) -> dict:
-        """Search the web. Call this whenever the caller asks about anything current or local
-        (news, weather, sport results, opening hours) or anything you are not sure of.
-
-        Args:
-            query: What the caller is looking for, in their own words.
-            topic: Optional filter: news, weather, sports, science or travel.
-        """
-        logger.info("web_search(%r, topic=%r)", query, topic)
-        return await tools.web_search(query, topic)
-
+    # Our own tool: LiveKit runs this method here, in this worker, when the model
+    # calls it, and sends the result back to the model. The docstring and type
+    # hints become the schema the model sees.
     @function_tool
     async def get_current_time(self, context: RunContext, timezone: str | None = None) -> dict:
-        """Get the current date and time.
+        """Get the current date and time. Use it whenever the caller asks the time or the date, or what
+        today or tomorrow is.
 
         Args:
-            timezone: Optional IANA time zone, for example Europe/Paris. Omit it for the server's time.
+            timezone: Optional IANA time zone, for example Europe/Paris. Omit it for the caller's own time zone.
         """
         return tools.current_time(timezone)
+
+    @function_tool
+    async def end_call(self, context: RunContext) -> None:
+        """Hang up the call. Use it when the caller is done or says goodbye, right after your own
+        short goodbye."""
+        # Let the goodbye finish playing, then close the room, which disconnects
+        # the caller. Returning None asks for no further reply.
+        await context.wait_for_playout()
+        get_job_context().delete_room()
 
 
 server = AgentServer()
@@ -69,11 +72,14 @@ server = AgentServer()
 @server.rtc_session()
 async def entrypoint(ctx: JobContext) -> None:
     session = AgentSession(
-        llm=boson.realtime.RealtimeModel(
+        llm=server_tools.RealtimeModel(
             url=os.getenv("BOSON_REALTIME_URL", "wss://api.boson.ai/v1/realtime/"),
             api_key=os.environ["BOSON_API_KEY"],
-            model=os.getenv("BOSON_REALTIME_MODEL", "higgs-realtime"),
+            model=os.getenv("BOSON_REALTIME_MODEL", "higgs-realtime-1.5-preview"),
             voice=os.getenv("BOSON_VOICE", "default"),
+            # Web search is a server-side tool: Higgs Realtime runs the search on
+            # Boson's servers and speaks the answer; there is no method to write.
+            server_tools=[{"type": "web_search"}],
             # Optional: captions of what the caller said, for the playground. The
             # model hears the caller's audio directly and does not need them.
             input_audio_transcription_model=os.getenv("BOSON_CAPTION_MODEL", "higgs-stt-3.1"),

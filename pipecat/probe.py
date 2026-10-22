@@ -1,7 +1,7 @@
 """Call a running bot.py the way the playground does, with no browser or microphone.
 
     uv run probe.py                                   # greeting only
-    uv run probe.py --say "who won the Willow Creek regional final?"
+    uv run probe.py --say "what's the weather in Tokyo today?"
 
 It starts a call through the same endpoint the playground uses (POST /start),
 connects over WebRTC, sends the RTVI client-ready message and waits for the
@@ -20,6 +20,7 @@ from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.mediastreams import AudioStreamTrack
 
 SHOWN = {"bot-ready", "bot-started-speaking"}
+QUIET_SECONDS = 8.0
 
 
 class Call:
@@ -30,6 +31,7 @@ class Call:
         self.turns = asyncio.Queue()
         self.bot_text: list[str] = []
         self.failure: str | None = None
+        self.hung_up = False
 
     def log(self, *args):
         print(f"{time.monotonic() - self.t0:6.2f}s", *args, flush=True)
@@ -70,6 +72,14 @@ async def main(url: str, say: str | None, timeout: float):
     channel.on("open", lambda: channel.send(rtvi("client-ready", {"version": "1.0.0"})))
     channel.on("message", call.on_rtvi)
 
+    @pc.on("connectionstatechange")
+    def on_state():
+        # The bot hung up (its end_call tool), or the connection dropped.
+        if pc.connectionState in ("closed", "failed") and not call.hung_up:
+            call.hung_up = True
+            call.log("the bot ended the call")
+            call.turns.put_nowait(None)
+
     async with aiohttp.ClientSession() as http:
         # POST /start: what the playground's Connect button does.
         async with http.post(f"{url}/start", json={"transport": "webrtc"}) as response:
@@ -89,8 +99,17 @@ async def main(url: str, say: str | None, timeout: float):
             await asyncio.sleep(1.0)
             call.log(f"typing: {say!r}")
             channel.send(rtvi("send-text", {"content": say, "options": {"audio_response": True}}))
-            await asyncio.wait_for(call.turns.get(), timeout)  # the answer
+            await asyncio.wait_for(call.turns.get(), timeout)  # the first reply
+            # A web search answers in two parts: a short "let me check" before it
+            # searches, then the answer once the search is done. Keep listening
+            # until the bot has been quiet for a while.
+            while not call.hung_up:
+                try:
+                    await asyncio.wait_for(call.turns.get(), QUIET_SECONDS)
+                except TimeoutError:
+                    break
     finally:
+        call.hung_up = call.hung_up or "closing"  # our own close is not the bot hanging up
         await pc.close()
     if call.failure:
         raise SystemExit(f"FAIL: {call.failure}")

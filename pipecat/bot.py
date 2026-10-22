@@ -14,7 +14,8 @@ import os
 
 from dotenv import load_dotenv
 from loguru import logger
-from pipecat.frames.frames import LLMRunFrame
+from pipecat.adapters.schemas.tools_schema import AdapterType, ToolsSchema
+from pipecat.frames.frames import EndWorkerFrame, FunctionCallResultProperties, LLMRunFrame
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.worker import PipelineParams, PipelineWorker
 from pipecat.processors.aggregators.llm_context import LLMContext
@@ -32,46 +33,60 @@ import tools
 load_dotenv(override=True)
 
 INSTRUCTIONS = """\
-You are Willow, a friendly voice assistant. Keep every answer to one or two short
-spoken sentences. Never use lists, markdown or emoji: everything you write is read
-aloud. Greet the caller in one sentence when the call starts. When the caller asks about
-anything current or local, use web_search instead of guessing."""
+You are Willow, a friendly voice assistant developed by Boson AI. Keep every
+answer to one or two short spoken sentences. Greet the caller in one sentence when the call
+starts. Always speak the language the caller is speaking, including while you look something up."""
 
 
-# Tools. The model decides to call one; Pipecat runs the function here, in this
-# process, and sends the result back to the model, which then answers out loud.
-# The docstring and type hints become the schema the model sees.
-async def web_search(params: FunctionCallParams, query: str, topic: str | None = None) -> None:
-    """Search the web. Call this whenever the caller asks about anything current or local
-    (news, weather, sport results, opening hours) or anything you are not sure of.
-
-    Args:
-        query: What the caller is looking for, in their own words.
-        topic: Optional filter: news, weather, sports, science or travel.
-    """
-    logger.info(f"web_search({query!r}, topic={topic!r})")
-    await params.result_callback(await tools.web_search(query, topic))
+def instructions() -> str:
+    """The instructions, plus where the caller probably is, read at the start of each call."""
+    timezone = tools.local_timezone()
+    return (
+        f"{INSTRUCTIONS}\n\nThe caller is in the {timezone} time zone, so they are probably "
+        "somewhere near there. When they say here without naming a place, assume they mean there."
+    )
 
 
+# Our own tool: Pipecat runs this function here, in this process, when the model
+# calls it, and sends the result back to the model. The docstring and type hints
+# become the schema the model sees.
 async def get_current_time(params: FunctionCallParams, timezone: str | None = None) -> None:
-    """Get the current date and time.
+    """Get the current date and time. Use it whenever the caller asks the time or the date, or what
+    today or tomorrow is.
 
     Args:
-        timezone: Optional IANA time zone, for example Europe/Paris. Omit it for the server's time.
+        timezone: Optional IANA time zone, for example Europe/Paris. Omit it for the caller's own time zone.
     """
     await params.result_callback(tools.current_time(timezone))
 
 
-TOOLS = [web_search, get_current_time]
+async def end_call(params: FunctionCallParams) -> None:
+    """Hang up the call. Use it when the caller is done or says goodbye, right after your own
+    short goodbye."""
+    logger.info("The agent is ending the call")
+    # Record the result, but don't ask for another reply: the goodbye has been said.
+    await params.result_callback({"ended": True}, properties=FunctionCallResultProperties(run_llm=False))
+    # EndWorkerFrame flushes what is queued ahead of it, the goodbye audio
+    # included, then ends the pipeline, which closes the caller's connection.
+    await params.llm.push_frame(EndWorkerFrame())
+
+
+# Web search is a server-side tool: declaring {"type": "web_search"} is all it takes.
+# Higgs Realtime runs the search on Boson's servers and speaks the answer; there is
+# no function to write and nothing to send back.
+TOOLS = ToolsSchema(
+    standard_tools=[get_current_time, end_call],
+    custom_tools={AdapterType.OPENAI: [{"type": "web_search"}]},
+)
 
 
 def make_llm() -> BosonRealtimeLLMService:
     return BosonRealtimeLLMService(
         url=os.getenv("BOSON_REALTIME_URL", "wss://api.boson.ai/v1/realtime/"),
         api_key=os.environ["BOSON_API_KEY"],
-        model=os.getenv("BOSON_REALTIME_MODEL", "higgs-realtime"),
+        model=os.getenv("BOSON_REALTIME_MODEL", "higgs-realtime-1.5-preview"),
         voice=os.getenv("BOSON_VOICE", "default"),
-        instructions=INSTRUCTIONS,
+        instructions=instructions(),
         tools=TOOLS,
         # Optional: captions of what the caller said, for the playground. The model
         # hears the caller's audio directly and does not need them.
@@ -103,6 +118,19 @@ async def bot(runner_args: RunnerArguments):
 
     # RTVI is the small protocol the playground uses for captions and status.
     rtvi = RTVIProcessor()
+
+    @llm.event_handler("on_conversation_item_created")
+    async def on_conversation_item_created(llm, item_id, item):
+        # A server-side search shows up as conversation items: the call (with
+        # executor "server") and, when the search is done, its result. Log the
+        # pages it read; a client could show them as sources.
+        if getattr(item, "type", None) == "function_call" and getattr(item, "executor", None) == "server":
+            logger.info(f"Searching the web ({item.name})")
+        elif getattr(item, "type", None) == "function_call_output":
+            urls = tools.source_urls(getattr(item, "output", ""))
+            if urls:
+                logger.info("Web search sources: " + ", ".join(urls))
+
     worker = PipelineWorker(
         pipeline,
         params=PipelineParams(enable_metrics=True),

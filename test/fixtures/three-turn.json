@@ -45,7 +45,7 @@
       "include": [],
       "instructions": "You are a friendly voice assistant being used to test a browser audio pipeline. Keep every reply to one or two short sentences. You are speaking aloud, not writing — no lists, no markdown, no emoji.",
       "max_output_tokens": "inf",
-      "model": "higgs-realtime",
+      "model": "higgs-realtime-1.5-preview",
       "output_modalities": [
         "audio"
       ],

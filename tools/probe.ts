@@ -46,7 +46,7 @@ import { dispatch as dispatchTool } from "../src/tools/registry";
 dotenv.config();
 
 const BOSON_BASE_URL = process.env.BOSON_BASE_URL ?? "https://api.boson.ai";
-const WS_URL = "wss://api.boson.ai/v1/realtime?model=higgs-realtime";
+const WS_URL = "wss://api.boson.ai/v1/realtime?model=higgs-realtime-1.5-preview";
 
 // ~100 ms per chunk, matching what the browser sends.
 const CHUNK_SAMPLES = AUDIO_RATE / 10;

@@ -80,7 +80,7 @@ The first thing to send once the socket opens is `session.update`. From
 {
   type: "session.update",
   session: {
-    model: "higgs-realtime",
+    model: "higgs-realtime-1.5-preview",
     instructions: SYSTEM_PROMPT,
     output_modalities: ["audio"],
     audio: {
