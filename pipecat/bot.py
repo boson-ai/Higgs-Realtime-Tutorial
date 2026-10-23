@@ -133,7 +133,8 @@ async def bot(runner_args: RunnerArguments):
 
     worker = PipelineWorker(
         pipeline,
-        params=PipelineParams(enable_metrics=True),
+        # Higgs Realtime takes and returns 24 kHz PCM; Pipecat's default input rate is 16 kHz.
+        params=PipelineParams(enable_metrics=True, audio_in_sample_rate=24000, audio_out_sample_rate=24000),
         rtvi_processor=rtvi,
         idle_timeout_secs=runner_args.pipeline_idle_timeout_secs,
     )
